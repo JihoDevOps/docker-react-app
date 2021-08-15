@@ -585,6 +585,9 @@ GitHub → Travis CI → AWS
 -   IAM 사용자
     -   root 사용자가 부여한 권한만 가진다.
 
+>   `AWSElasticBeanstalkFullAccess`가 없어
+>   `AdministratorAccess-AWSElasticBeanstalk`으로 설정했다.
+
 >   보안을 위해 새로 계정을 생성하는 것
 
 Dashboard → IAM 검색 → 사용자 클릭 → 사용자 추가 클릭
@@ -606,3 +609,14 @@ deploy:
   access_key_id: $AWS_ACCESS_KEY
   secret_access_key: $AWS_SECRET_ACCESS_KEY
 ```
+
+`dockerfile`에서 포트 매핑 추가
+
+```dockerfile
+...
+FROM nginx
+EXPOSE 80
+COPY ...
+```
+
+Nginx가 80번 포트로 동작하기 때문에 이 설정이 필요하다.
