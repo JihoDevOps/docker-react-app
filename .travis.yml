@@ -1,0 +1,16 @@
+sudo: required
+
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - echo "Start creating on image with dockerfile"
+  - docker build -t jiho/docker-react-app -f dockerfile.dev .
+
+script:
+  - docker run -e CI=true jiho/docker-react-app npm run test -- --coverage
+
+after_success:
+  - echo "Test Success"

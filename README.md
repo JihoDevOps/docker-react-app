@@ -395,9 +395,84 @@ nginx가 웹 브라우저의 http 요청이 올 때마다 알맞은 파일을 �
 ## B. 테스트 배포 부분
 
 ### 1. 섹션 설명 및 Github에 소스 코드 올리기
+
+1.  GitHub 새로운 Repo에 react-app push
+2.  Travis CI 연결
+
 ### 2. Travis CI 설명
+
+Travis CI는 GitHub에서 진행하는 오픈소스 프로젝트를 위한
+지속적인 통합(Continuous Integration) 서비스이다.
+2011년 설립되어 2012년 급성장했다.
+기존에는 Ruby 언어만 지원했으나 현재 대부분 개발 언어를 지원한다.
+Travis CI를 이용하면 GitHub repository에 있는 프로젝트를
+특정 이벤트에 따라 자동으로 테스트, 빌드 및 배포할 수 있다.
+Private repository는 유료로 일정 금액을 지불하여 사용한다.
+
+#### Travis CI Flow
+
+>   Local Git → GitHub → Travis CI → AWS
+
+1.  Local Git에 있는 소스를 GitHub 저장소에 Push
+2.  GitHub master branch에 push 이벤트 발생 시
+    Travis CI에게 소스가 Push 되었다고 알림
+3.  Travis CI는 업데이트 된 소스를 GitHub에서 가져옴
+4.  GitHub에서 가져온 소스의 테스트 코드 실행
+5.  테스트 실행 후 성공 시 AWS와 같은 호스팅 사이트로 보내 배포
+
 ### 3. Travis CI 이용 순서
+
+#### Travis CI 이용 순서
+
+GitHub에 Push 시 Travis CI에서 그 소스를 가져가야 한다.
+GitHub과 Travis CI 연결이 필요하다.
+
+1.  Travis CI 사이트 방문 및 가입
+2.  `.travis.yml` 파일 작성하여 설정 완료
+
+GitHub에서 Travis CI로 소스를 어떻게 전달할 것인지,
+전달 받은 소스를 어떻게 테스트 할 것인지,
+테스트가 성공하고 어떻게 AWS에 배포할 것인지를 설정해야 한다.
+
+`docker-compose.yml`과 비슷하게 `.travis.yml`로 설정한다.
+
+
 ### 4. travis yml 파일 작성하기 (테스트)
+
+1.  Test를 수행하기 위한 준비
+    -   도커 환경에서 리액트 앱을 실행하고 있으니
+        Travis CI에서도 도커 환경 구성
+    -   구성된 도커 환경에서 Dockerfile.dev로 도커 이미지 생성
+2.  Test 수행
+    -   어떻게 Test를 수행할 것인지 설정
+3.  AWS로 배포하기
+    -   어떻게 AWS에 소스코드를 배포할 것인지 설정하기
+
+```yml
+# 관리자 권한 설정
+sudo: required
+
+# 언어 플랫폼 선택
+language: generic
+
+# Docker 환경 구성
+services:
+  - docker
+
+# Scipt 실행 전 필요한 수행 - 이미지 빌드
+before_install:
+  - echo "Start creating on image with dockerfile"
+  - docker build -t jiho/docker-react-app -f dockerfile.dev .
+
+# Script로 테스트 실행
+script:
+  - docker run -e CI=true jiho/docker-react-app npm run test -- --coverage
+
+# 테스트 성공 후 필요한 수행 - 로그 찍기
+after_success:
+  - echo "Test Success"
+```
+
 ### 5. AWS 알아보기
 ### 6. Elastic Beanstalk 환경 구성하기
 ### 7. travis yml 파일 작성하기 (배포)
