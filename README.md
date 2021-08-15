@@ -602,7 +602,7 @@ Dashboard → IAM 검색 → 사용자 클릭 → 사용자 추가 클릭
 ```yml
 deploy:
   ...
-# Key(Travis의 환경 변수) 등록
-access_key_id: $AWS_ACCESS_KEY
-secret_access_key: $AWS_SECRET_ACCESS_KEY
+  # Key(Travis의 환경 변수) 등록
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key: $AWS_SECRET_ACCESS_KEY
 ```
