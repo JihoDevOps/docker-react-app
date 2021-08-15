@@ -473,7 +473,136 @@ after_success:
   - echo "Test Success"
 ```
 
+#### Repository가 Organization에 있을 경우
+
+Organization을 등록하고, Free Plan을 등록해야만 알아먹는다.
+아직 Travis Documents에 토글이 있다고 하는데 지금은 없다.
+그래서 혼동이 왔으나 역시나 스택 오버플로우가 나를 도왔다.
+
 ### 5. AWS 알아보기
+
+1.  [AWS 사이트 방문](https://aws.amazon.com)
+2.  회원가입 및 신용카드 정보 등록
+3.  AWS Dashboard
+4.  Elastic BeanStalk 검색
+
+#### What is EC2?
+
+>   Elastic Compute Cloud
+
+Amazon Elastic Computed Cloud는 Amazon Web Services(AWS) 클라우드에서
+확장식 컴퓨팅을 제공합니다.
+Amazon EC2를 사용하면 하드웨어에 선투자할 필요가 없어
+더 빠르게 애플리케이션을 개발하고 배포할 수 있습니다.
+Amazon EC2는 요구 사항이나 갑작스러운 인기 증대 등
+변동 사항에 따라 신속하게 규모를 확장하거나 축소할 수 있어
+서버 트래픽 예측 필요성이 줄어듭니다.
+
+#### What is EB?
+
+>   Elastic BeanStalk
+
+AWS Elasic BeanStalk는 Apache, Nginx같은 친숙한 서버에서
+Java, NET, PHP, Node.js, Python, Ruby, Go 및 Docker와 함꼐
+개발된 웹 응용 프로그램 및 서비스를 배포하고 확장하기 쉬운 서비입니다.
+
+EB는 EC2 인스턴스나 데이터베이스 같이 많은 것들을 포함한 "환경"을
+구성하며 만들고 있는 소프트웨어를 업데이트를 할 때마다 자동으로 관리한다.
+
 ### 6. Elastic Beanstalk 환경 구성하기
+
+EB에는 로드밸런서가 있기 때문에 트래픽 양에 따라
+자동적으로 EC2 유닛을 관리해준다.
+
+-   실행 버전: Sample Application
+-   플랫폼
+    -   Docker
+    -   64bit Amazon Linux/2.16.11
+
 ### 7. travis yml 파일 작성하기 (배포)
+
+#### `.travis.yml` 파일 작성하기 (배포 부분)
+
+현재는 도커 이미지를 생성 후 애플리케이션을 테스트만 진행한다.
+테스트에 성공하면 AWS EB에 자동으로 배포하는 부분을 작성한다.
+
+```yml
+deploy:
+  # 외부 서비스 표시: s3, elasticbeanstalk, firebase 등
+  provider: elasticbeanstalk
+  # 현재 사용하고 있는 AWS의 서비스가 위치하고 있는 물리적 장소
+  region: "ap-northeast-2"
+  # 생성된 애플리케이션의 이름
+  app: "docker-react-app"
+  # Elastic BeanStalk Environment 이름
+  env: "Dockerreactapp-env"
+  # 해당 elasticbeanstalk을 위한 s3 버켓 이름
+  # s3: 파일들을 저장하는 곳
+  # Travis가 build 파일을 압축하여 s3로 전송하기 때문에 필요하다.
+  # s3는 EB 생성 시 알아서 생성되어 있다.
+  # aws console에서 s3 검색하면 이미 존재하는 인스턴스를 확인한다.
+  bucket_name: "elasticbeanstalk-ap-northeast-2-869075270387"
+  # 애플리케이션 이름과 동일하다.
+  # 자세한 설명은 따로 찾아보자.
+  bucket_path: "docker-react-app"
+  # GitHub 설정
+  on:
+    # 어떤 branch에서 Push 이벤트 발생 시 AWS에 배포할 것인지
+    branch: master
+```
+
+>   철자에 주의하자.
+
 ### 8. Travis CI의 AWS 접근을 위한 API 생성
+
+현재까지 Travis CI에서 AWS에 어떤 파일을 전해줄 것인지,
+AWS에서 어떤 서비스를 이용할 것인지 부수적인 설정을 했다.
+
+Travis와 AWS가 실질적으로 소통을 할 수 있게 인증 부분을 작성한다.
+
+#### 소스 파일을 전달하기 위한 접근 요건
+
+GitHub → Travis CI → AWS
+
+-   Travis CI 아이디 로그인 시 GitHub 연동으로 인증
+-   AWS에서 제공하는 Secret Key를 `.travis.yml`에 작성
+
+#### Secret, Access API Key 발급
+
+인증을 위해 API Key를 발급해야 한다.
+
+##### 1. IAM USER 생성
+
+##### IAM(Identity and Access Management)
+
+-   AWS 리소스에 대한 액세스를 안전하게 제어할 수 있는
+    웹 서비스
+-   IAM을 사용하여 리소스를 사용하도록 인증(로그인) 및
+    권한 부여된 대상을 제어
+-   Root 사용자
+    -   현재 우리가 처음 가입하여 사용하고 있는 계정
+    -   AWS 서비스 및 리소스에 대한 완전한 액세스 권한이 있음
+-   IAM 사용자
+    -   root 사용자가 부여한 권한만 가진다.
+
+>   보안을 위해 새로 계정을 생성하는 것
+
+Dashboard → IAM 검색 → 사용자 클릭 → 사용자 추가 클릭
+
+##### 2. API Key를 `.travis.yml`에 작성하기
+
+-   직접 API Key를 `.travis.yml`에 작성하면 노출되므로
+    다른 곳에 작성하고 그것을 가져와야 한다.
+-   Travis 웹사이트 해당 저장고 대시보드 방문
+-   설정 클릭
+-   AWS에서 받은 API Keys를 Name과 Value에 적어서 관리한다.
+-   Travis CI 웹사이트에서 보관 중인 Keys를
+    로컬 환경에서 가지고 올 수 있게 `.travis.tml` 파일에 설정
+
+```yml
+deploy:
+  ...
+# Key(Travis의 환경 변수) 등록
+access_key_id: $AWS_ACCESS_KEY
+secret_access_key: $AWS_SECRET_ACCESS_KEY
+```
